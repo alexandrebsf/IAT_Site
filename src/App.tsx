@@ -185,8 +185,8 @@ useEffect(() => {
     // --- NOVO: clique no mapa ---
     mapRef.current.on("click", (e: L.LeafletMouseEvent) => {
       const { lat, lng } = e.latlng;
-      setData(prev => ({ ...prev, latitude: lat, longitude: lng }));
-      setCalculatedData(prev => prev ? { ...prev, latitude: lat, longitude: lng } : null);
+      setData((prev: BallisticsData) => ({ ...prev, latitude: lat, longitude: lng }));
+      setCalculatedData((prev: BallisticsData | null) => prev ? { ...prev, latitude: lat, longitude: lng } : null);
     });
   }
 

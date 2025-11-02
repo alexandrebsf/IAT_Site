@@ -1,13 +1,12 @@
 {
   "compilerOptions": {
-    "target": "ESNext",
-    "useDefineForClassFields": true,
-    "module": "ESNext",
-    "moduleResolution": "Node",
+    "target": "esnext",
+    "module": "esnext",
+    "moduleResolution": "nodenext",
     "strict": true,
-    "jsx": "react-jsx",
     "esModuleInterop": true,
-    "skipLibCheck": true,
+    "allowJs": true,
+    "jsx": "react-jsx",
     "forceConsistentCasingInFileNames": true
   }
 }
