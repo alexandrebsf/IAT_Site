@@ -1,7 +1,7 @@
 import { useState, useRef, useEffect } from "react";
 import L from "leaflet";
 import "leaflet/dist/leaflet.css";
-import type { BallisticsData } from "./types";
+import type { BallisticsData } from "../types";
 
 
 // --- FUNÇÕES DE UTILIDADE ---
