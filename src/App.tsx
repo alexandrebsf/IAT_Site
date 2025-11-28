@@ -241,7 +241,7 @@ useEffect(() => {
         />
 
         <div className="font-bold text-lg">
-          Simulador Balístico — Múltiplos DRS
+          Simulador Balístico
         </div>
       </header>
       <div className="flex flex-1">
