@@ -233,7 +233,17 @@ useEffect(() => {
 
   return (
     <div className="flex flex-col h-screen">
-      <header className="bg-gray-800 text-white p-4 font-bold text-lg">Simulador Balístico</header>
+      <header className="bg-gray-800 text-white p-4 flex items-center gap-3">
+        <img
+          src="iat.png"
+          alt="iat"
+          className="h-10 w-auto object-contain"
+        />
+
+        <div className="font-bold text-lg">
+          Simulador Balístico — Múltiplos DRS
+        </div>
+      </header>
       <div className="flex flex-1">
       {/* FORMULÁRIO */}
       <aside className="w-full md:w-1/3 p-4 overflow-y-auto border-r border-gray-300">
