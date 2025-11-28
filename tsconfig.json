@@ -9,6 +9,8 @@
     "jsx": "react-jsx",
     "forceConsistentCasingInFileNames": true,
     "allowImportingTsExtensions": true,
-    "skipLibCheck": true
-  }
+    "skipLibCheck": true,
+    "noEmit": true
+  },
+  "include": ["src"]
 }
