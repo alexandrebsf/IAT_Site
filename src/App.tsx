@@ -395,7 +395,7 @@ export default function App() {
   /* --- JSX --- */
   return (
     <div className="flex flex-col h-screen">
-      <header className="bg-gray-800 text-white p-4 flex items-center gap-3">
+      <header className="bg-gray-800 text-white p-4 flex items-center gap-3 sticky top-0 z-50">
         <img
           src="iat.png"
           alt="iat"
@@ -406,11 +406,11 @@ export default function App() {
           Simulador Balístico — Múltiplos DRS
         </div>
       </header>
-      <div className="flex flex-1">
+      <div className="flex-1 flex flex-col md:flex-row">
         {/* ASIDE: abas + painel */}
-        <aside className="w-full md:w-1/3 p-2 overflow-y-auto border-r border-gray-300 flex flex-col">
+        <aside className="w-full md:w-1/3 border-b md:border-b-0 md:border-r flex flex-col bg-gray-100">
           {/* Abas horizontais */}
-          <div className="flex items-center gap-2 overflow-x-auto pb-2">
+          <div className="flex items-center gap-2 overflow-x-auto pb-2 sticky top-20 z-40 bg-gray-100">
             {drsList.map((d, i) => (
               <div key={d.id} className={`flex items-center gap-2 px-3 py-1 rounded-md cursor-pointer ${i === selectedIndex ? 'bg-blue-600 text-white' : 'bg-gray-200 text-gray-800'}`} onClick={() => setSelectedIndex(i)}>
                 <span className="font-medium">{d.name}</span>
@@ -424,7 +424,7 @@ export default function App() {
           </div>
 
           {/* Painel do DRS selecionado */}
-          <div className="flex-1 p-3 overflow-y-auto">
+          <div className="flex-1 overflow-y-auto p-2">
             <h2 className="font-semibold text-lg mb-4">{drsList[selectedIndex]?.name || 'Sem DRS'}</h2>
 
             {drsList[selectedIndex] && (
@@ -485,7 +485,7 @@ export default function App() {
         </aside>
 
         {/* MAPA */}
-        <div className="w-full md:w-2/3">
+        <div className="w-full md:w-2/3 md:ml-2 h-[60vh] md:h-auto">
           <div id="map" className="h-full w-full"></div>
         </div>
       </div>
