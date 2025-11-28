@@ -103,6 +103,9 @@ export default function App() {
   ]);
   const [selectedIndex, setSelectedIndex] = useState<number>(0);
 
+  /* Estado novo: habilitar toque no mapa */
+  const [touchEnabled, setTouchEnabled] = useState<boolean>(false);
+
   /* Refs do mapa e das featureGroups por DRS */
   const mapRef = useRef<L.Map | null>(null);
   // cada drsId -> L.FeatureGroup contendo suas linhas/arcos
@@ -138,9 +141,7 @@ export default function App() {
       if (fg) {
         try {
           mapRef.current!.removeLayer(fg);
-        } catch (e) {
-          /* ignore */
-        }
+        } catch (e) {}
       }
     });
     linesRefsRef.current = {};
@@ -149,12 +150,13 @@ export default function App() {
   /* --- Desenha todo o conjunto de um DRS dentro de um FeatureGroup --- */
   const drawAllFor = (d: BallisticsData, drsId: string) => {
     if (!mapRef.current) return;
-    // criar featureGroup para este DRS (substitui qualquer anterior)
+
     if (linesRefsRef.current[drsId]) {
       try {
         mapRef.current.removeLayer(linesRefsRef.current[drsId]!);
       } catch (e) {}
     }
+
     const fg = L.featureGroup();
     linesRefsRef.current[drsId] = fg;
 
@@ -181,23 +183,50 @@ export default function App() {
       color: string,
       dash = "5,5"
     ): [number, number] => {
-      const [endLat, endLng] = calculateDestinationPoint(startLat, startLng, bearing, distance);
-      const poly = L.polyline([[startLat, startLng], [endLat, endLng]], { color, dashArray: dash });
+      const [endLat, endLng] = calculateDestinationPoint(
+        startLat,
+        startLng,
+        bearing,
+        distance
+      );
+      const poly = L.polyline([[startLat, startLng], [endLat, endLng]], {
+        color,
+        dashArray: dash,
+      });
       fg.addLayer(poly);
       return [endLat, endLng];
     };
 
-    // Linhas A, B, C
-    const [endALat, endALng] = addLine("A", latitude, longitude, direcaoTiro, distanciaX, "#FF0000");
+    const [endALat, endALng] = addLine(
+      "A",
+      latitude,
+      longitude,
+      direcaoTiro,
+      distanciaX,
+      "#FF0000"
+    );
     addLine("B", latitude, longitude, direcaoTiro + anguloDispersao, distanciaX, "#00AA00", "2,2");
     addLine("C", latitude, longitude, direcaoTiro - anguloDispersao, distanciaX, "#00AA00", "2,2");
 
     // Linhas D, E
     const distanciaD = anguloP !== 0 ? distanciaW / Math.sin((anguloP * Math.PI) / 180) : distanciaX;
-    const [endDLat, endDLng] = addLine("D", latitude, longitude, direcaoTiro + anguloDispersao + anguloP, distanciaD, "#0000FF");
-    const [endELat, endELng] = addLine("E", latitude, longitude, direcaoTiro - anguloDispersao - anguloP, distanciaD, "#0000FF");
+    const [endDLat, endDLng] = addLine(
+      "D",
+      latitude,
+      longitude,
+      direcaoTiro + anguloDispersao + anguloP,
+      distanciaD,
+      "#0000FF"
+    );
+    const [endELat, endELng] = addLine(
+      "E",
+      latitude,
+      longitude,
+      direcaoTiro - anguloDispersao - anguloP,
+      distanciaD,
+      "#0000FF"
+    );
 
-    // Linhas F, G
     let anguloB = anguloP;
     if (distanciaX > 0 && distanciaA > 0) {
       const arcsinValue = Math.asin(distanciaW / distanciaX) * (180 / Math.PI);
@@ -207,16 +236,13 @@ export default function App() {
     addLine("F", endDLat, endDLng, direcaoTiro + anguloDispersao, distanciaF, "#0000FF");
     addLine("G", endELat, endELng, direcaoTiro - anguloDispersao, distanciaF, "#0000FF");
 
-    // Arco principal
-    if (distanciaX > 0 && distanciaW > 0) {
-      const bearingB = direcaoTiro + anguloDispersao;
-      const bearingC = direcaoTiro - anguloDispersao;
-      const bearingF = bearingB + Math.asin(distanciaW / distanciaX) * (180 / Math.PI);
-      const bearingG = bearingC - Math.asin(distanciaW / distanciaX) * (180 / Math.PI);
-      const arcPoints = createArcPoints(latitude, longitude, distanciaX, bearingG, bearingF, 150);
-      const arcPoly = L.polyline(arcPoints, { color: "#0000FF", weight: 3, dashArray: "8,4" });
-      fg.addLayer(arcPoly);
-    }
+    const bearingB = direcaoTiro + anguloDispersao;
+    const bearingC = direcaoTiro - anguloDispersao;
+    const bearingF = bearingB + Math.asin(distanciaW / distanciaX) * (180 / Math.PI);
+    const bearingG = bearingC - Math.asin(distanciaW / distanciaX) * (180 / Math.PI);
+    const arcPoints = createArcPoints(latitude, longitude, distanciaX, bearingG, bearingF, 150);
+    const arcPoly = L.polyline(arcPoints, { color: "#0000FF", weight: 3, dashArray: "8,4" });
+    fg.addLayer(arcPoly);
 
     // Linhas H-M e círculo maior só para munição explosiva
     if (munição === "explosiva") {
@@ -251,6 +277,7 @@ export default function App() {
 
     // adicionar featureGroup ao mapa por fim
     fg.addTo(mapRef.current!);
+  
   };
 
   /* --- Redesenha tudo: limpa e desenha todos os DRS calculados e visíveis --- */
@@ -276,9 +303,7 @@ export default function App() {
       try {
         const bounds = L.featureGroup(allLayers).getBounds();
         mapRef.current!.fitBounds(bounds, { padding: [25, 25] });
-      } catch (err) {
-        /* ignore */
-      }
+      } catch (err) {}
     }
   };
 
@@ -353,7 +378,10 @@ export default function App() {
   /* --- Inicialização do mapa (sem handler de clique) --- */
   useEffect(() => {
     if (!mapRef.current) {
-      mapRef.current = L.map("map", { zoomControl: true }).setView([defaultBallisticsData.latitude, defaultBallisticsData.longitude], 13);
+      mapRef.current = L.map("map", { zoomControl: true }).setView(
+        [defaultBallisticsData.latitude, defaultBallisticsData.longitude],
+        13
+      );
       markersGroupRef.current = L.featureGroup().addTo(mapRef.current);
 
       const layersControl = L.control.layers({}, {}, { position: "topright" }).addTo(mapRef.current);
@@ -371,6 +399,7 @@ export default function App() {
     if (!mapRef.current) return;
 
     const handler = (e: L.LeafletMouseEvent) => {
+      if (!touchEnabled) return;
       const { lat, lng } = e.latlng;
       // atualiza somente o DRS selecionado (selectedIndex mais recente aqui)
       updateSelectedDrsData({ latitude: lat, longitude: lng }, true);
@@ -379,11 +408,9 @@ export default function App() {
     mapRef.current.on("click", handler);
 
     return () => {
-      // remove handler anterior para evitar handlers duplicados
       mapRef.current?.off("click", handler);
     };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [selectedIndex]);
+  }, [selectedIndex, touchEnabled]);
 
   /* --- useEffect para garantir redraw quando drsList muda (adicionar/remover/toggle/editar/calculated) --- */
   useEffect(() => {
@@ -396,50 +423,75 @@ export default function App() {
   return (
     <div className="flex flex-col h-screen">
       <header className="bg-gray-800 text-white p-4 flex items-center gap-3 sticky top-0 z-50">
-        <img
-          src="iat.png"
-          alt="iat"
-          className="h-10 w-auto object-contain"
-        />
-
-        <div className="font-bold text-lg">
-          Simulador Balístico — Múltiplos DRS
-        </div>
+        <img src="iat.png" alt="iat" className="h-10 w-auto object-contain" />
+        <div className="font-bold text-lg">Simulador Balístico — Múltiplos DRS</div>
       </header>
       <div className="flex-1 flex flex-col md:flex-row">
-        {/* ASIDE: abas + painel */}
         <aside className="w-full md:w-1/3 border-b md:border-b-0 md:border-r flex flex-col bg-gray-100">
-          {/* Abas horizontais */}
           <div className="flex items-center gap-2 overflow-x-auto pb-2 sticky top-20 z-40 bg-gray-100">
             {drsList.map((d, i) => (
-              <div key={d.id} className={`flex items-center gap-2 px-3 py-1 rounded-md cursor-pointer ${i === selectedIndex ? 'bg-blue-600 text-white' : 'bg-gray-200 text-gray-800'}`} onClick={() => setSelectedIndex(i)}>
+              <div
+                key={d.id}
+                className={`flex items-center gap-2 px-3 py-1 rounded-md cursor-pointer ${
+                  i === selectedIndex ? "bg-blue-600 text-white" : "bg-gray-200 text-gray-800"
+                }`}
+                onClick={() => setSelectedIndex(i)}
+              >
                 <span className="font-medium">{d.name}</span>
-                <button onClick={(e) => { e.stopPropagation(); toggleVisibility(i); }} title="Mostrar/Ocultar" className="text-sm px-1 rounded bg-white/10">
-                  {d.visible ? '👁' : '🙈'}
+                <button
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    toggleVisibility(i);
+                  }}
+                  title="Mostrar/Ocultar"
+                  className="text-sm px-1 rounded bg-white/10"
+                >
+                  {d.visible ? "👁" : "🙈"}
                 </button>
-                <button onClick={(e) => { e.stopPropagation(); removeDrs(i); }} title="Remover" className="text-sm px-1 rounded bg-red-500 text-white">✕</button>
+                <button
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    removeDrs(i);
+                  }}
+                  title="Remover"
+                  className="text-sm px-1 rounded bg-red-500 text-white"
+                >
+                  ✕
+                </button>
               </div>
             ))}
-            <button onClick={addNewDrs} className="ml-2 px-3 py-1 rounded-md bg-green-600 text-white font-semibold">+ Novo DRS</button>
+            <button
+              onClick={addNewDrs}
+              className="ml-2 px-3 py-1 rounded-md bg-green-600 text-white font-semibold"
+            >
+              + Novo DRS
+            </button>
           </div>
 
-          {/* Painel do DRS selecionado */}
           <div className="flex-1 overflow-y-auto p-2">
-            <h2 className="font-semibold text-lg mb-4">{drsList[selectedIndex]?.name || 'Sem DRS'}</h2>
+            <h2 className="font-semibold text-lg mb-4">{drsList[selectedIndex]?.name || "Sem DRS"}</h2>
 
             {drsList[selectedIndex] && (
               <>
                 <div className="grid grid-cols-2 gap-2 mb-4">
                   <div>
                     <label className="block font-medium mb-1">Munição</label>
-                    <select value={drsList[selectedIndex].data.munição} onChange={(e) => updateSelectedDrsData({ munição: e.target.value as any })} className="w-full border rounded px-2 py-1">
+                    <select
+                      value={drsList[selectedIndex].data.munição}
+                      onChange={(e) => updateSelectedDrsData({ munição: e.target.value as any })}
+                      className="w-full border rounded px-2 py-1"
+                    >
                       <option value="explosiva">Explosiva</option>
                       <option value="nao-explosiva">Não Explosiva</option>
                     </select>
                   </div>
                   <div>
                     <label className="block font-medium mb-1">Tipo de Impacto</label>
-                    <select value={drsList[selectedIndex].data.tipoImpacto} onChange={(e) => updateSelectedDrsData({ tipoImpacto: e.target.value as any })} className="w-full border rounded px-2 py-1">
+                    <select
+                      value={drsList[selectedIndex].data.tipoImpacto}
+                      onChange={(e) => updateSelectedDrsData({ tipoImpacto: e.target.value as any })}
+                      className="w-full border rounded px-2 py-1"
+                    >
                       <option value="terra">Terra</option>
                       <option value="metal">Metal</option>
                     </select>
@@ -465,15 +517,28 @@ export default function App() {
                         type="number"
                         step={field.step}
                         value={drsList[selectedIndex].data[field.key as keyof BallisticsData] as number}
-                        onChange={(e) => updateSelectedDrsData({ [field.key]: parseFloat(e.target.value) } as any)}
+                        onChange={(e) =>
+                          updateSelectedDrsData({ [field.key]: parseFloat(e.target.value) } as any)
+                        }
                         className="w-full border rounded px-2 py-1"
                       />
                     </div>
                   ))}
                 </div>
 
-                <button className="mt-3 w-full bg-blue-600 text-white font-semibold py-2 rounded hover:bg-blue-700 transition-colors" onClick={calculateForSelected}>
+                <button
+                  className="mt-3 w-full bg-blue-600 text-white font-semibold py-2 rounded hover:bg-blue-700 transition-colors"
+                  onClick={calculateForSelected}
+                >
                   Calcular Trajetória
+                </button>
+
+                {/* NOVO BOTÃO: Habilitar toque no mapa */}
+                <button
+                  className="mt-2 w-full bg-yellow-500 text-black font-semibold py-2 rounded hover:bg-yellow-600 transition-colors"
+                  onClick={() => setTouchEnabled((prev) => !prev)}
+                >
+                  {touchEnabled ? "Desabilitar toque no mapa" : "Habilitar toque no mapa"}
                 </button>
 
                 <div className="mt-3 text-sm text-gray-600">
@@ -484,8 +549,7 @@ export default function App() {
           </div>
         </aside>
 
-        {/* MAPA */}
-        <div className="w-full md:w-2/3 md:ml-2 h-[60vh] md:h-auto">
+        <div className="w-full md:w-2/3 md:ml-2 h-[70vh] md:h-auto">
           <div id="map" className="h-full w-full"></div>
         </div>
       </div>
