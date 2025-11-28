@@ -1,9 +1,22 @@
 import { useState, useRef, useEffect } from "react";
 import L from "leaflet";
 import "leaflet/dist/leaflet.css";
-import type { BallisticsData } from "./types";
+//import type { BallisticsData } from "./types";
 
-
+interface BallisticsData {
+  munição: "explosiva" | "nao-explosiva";
+  tipoImpacto: "terra" | "metal";
+  anguloDispersao: number;
+  distanciaX: number;
+  anguloP: number;
+  distanciaW: number;
+  distanciaA: number;
+  distanciaB: number;
+  alturaMaxima: number;
+  latitude: number;
+  longitude: number;
+  direcaoTiro: number;
+}
 // --- FUNÇÕES DE UTILIDADE ---
 function calculateDestinationPoint(
   lat: number,
@@ -57,9 +70,9 @@ export default function App() {
     distanciaA: 615,
     distanciaB: 615,
     alturaMaxima: 1090,
-    latitude: -23.5505,
-    longitude: -46.6333,
-    direcaoTiro: 0,
+    latitude: -15.666,
+    longitude: -47.23046667,
+    direcaoTiro: 173,
   });
 
   const [, setDrawTrajectory] = useState(false);
@@ -178,7 +191,7 @@ useEffect(() => {
     const layersControl = L.control.layers({}, {}, { position: "topright" }).addTo(mapRef.current);
     layers.forEach((layer) => {
       const tileLayer = L.tileLayer(layer.url, { attribution: layer.attribution, maxZoom: 19 });
-      if (layer.id === "osm") tileLayer.addTo(mapRef.current!);
+      if (layer.id === "satellite") tileLayer.addTo(mapRef.current!);
       layersControl.addBaseLayer(tileLayer, layer.name);
     });
 
